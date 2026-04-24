@@ -18,6 +18,7 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/path.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <yaml-cpp/yaml.h>
 
@@ -58,6 +59,19 @@ public:
         m_path_pub = this->create_publisher<nav_msgs::msg::Path>("lio_path", 10000);
         m_odom_pub = this->create_publisher<nav_msgs::msg::Odometry>("lio_odom", 10000);
         m_tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
+
+        // Clear the accumulated lio_path (trajectory). Handy from rviz / CLI
+        // to visually reset the trajectory line without restarting LIO.
+        m_reset_path_srv = this->create_service<std_srvs::srv::Trigger>(
+            "reset_path",
+            [this](const std::shared_ptr<std_srvs::srv::Trigger::Request>,
+                   std::shared_ptr<std_srvs::srv::Trigger::Response> resp) {
+                size_t was = m_state_data.path.poses.size();
+                m_state_data.path.poses.clear();
+                resp->success = true;
+                resp->message = "cleared " + std::to_string(was) + " poses";
+                RCLCPP_INFO(this->get_logger(), "lio_path reset (%zu poses cleared)", was);
+            });
 
         m_state_data.path.poses.clear();
         m_state_data.path.header.frame_id = m_node_config.world_frame;
@@ -279,6 +293,7 @@ private:
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_body_cloud_pub;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr m_world_cloud_pub;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr m_path_pub;
+    rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr m_reset_path_srv;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_odom_pub;
 
     rclcpp::TimerBase::SharedPtr m_timer;

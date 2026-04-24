@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <cmath>
 pcl::PointCloud<pcl::PointXYZINormal>::Ptr Utils::livox2PCL(const livox_ros_driver2::msg::CustomMsg::SharedPtr msg, int filter_num, double min_range, double max_range)
 {
     pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZINormal>);
@@ -12,6 +13,11 @@ pcl::PointCloud<pcl::PointXYZINormal>::Ptr Utils::livox2PCL(const livox_ros_driv
             float x = msg->points[i].x;
             float y = msg->points[i].y;
             float z = msg->points[i].z;
+            // Reject NaN / inf — comparisons with NaN are all false so the
+            // range check below would let them through and blow up the
+            // downstream VoxelGrid bounding box.
+            if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+                continue;
             if (x * x + y * y + z * z < min_range * min_range || x * x + y * y + z * z > max_range * max_range)
                 continue;
             pcl::PointXYZINormal p;

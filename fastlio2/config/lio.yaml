@@ -1,5 +1,5 @@
 imu_topic: /livox/imu
-lidar_topic: /livox/lidar
+lidar_topic: /scanner/cloud
 body_frame: body
 world_frame: lidar
 print_time_cost: false
@@ -10,7 +10,7 @@ lidar_max_range: 30.0
 scan_resolution: 0.15
 map_resolution: 0.3
 
-cube_len: 300
+cube_len: 100
 det_range: 60
 move_thresh: 1.5
 
